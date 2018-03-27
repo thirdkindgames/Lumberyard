@@ -521,12 +521,6 @@ namespace NAsyncCull
             using namespace NVMath;
 
             int bHWZBuffer  =   GetCVars()->e_CoverageBufferReproj;
-
-            if (bHWZBuffer > 3 && m_OCMBuffer.empty())
-            {
-                bHWZBuffer  =   2;
-            }
-
             if ((bHWZBuffer & 3) > 0)
             {
                 CRYPROFILE_SCOPE_PROFILE_MARKER("Transfer Previous Frame Z-Buffer");
@@ -550,11 +544,6 @@ namespace NAsyncCull
 
         int bHWZBuffer  =   GetCVars()->e_CoverageBufferReproj;
         int PolyLimit       =   GetCVars()->e_CoverageBufferRastPolyLimit;
-
-        if (bHWZBuffer > 3 && m_OCMBuffer.empty())
-        {
-            bHWZBuffer  =   2;
-        }
 
         if (!GetCVars()->e_CameraFreeze && (bHWZBuffer & 3) > 0 && m_Enabled)
         {

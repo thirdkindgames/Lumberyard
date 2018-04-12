@@ -103,6 +103,17 @@ namespace AzFramework
         //! \return The system cursor position normalized relative to the application's main window
         virtual AZ::Vector2 GetSystemCursorPositionNormalized() const = 0;
 
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        //! Allow global enabling/disabling of mouse cursor capture.
+        //! This allows user code to control whether or not the mouse is allowed to be captured 
+        //! and works independently from the current SystemCursorState.
+        //! This is useful for dev, particularly when running multiple copies of the game.
+        //! Implemented on Windows only.
+        //!
+        //! \param[in] constraintAllowed Whether mouse will be constrained 
+        virtual void SetAllowCursorConstraint(bool constraintAllowed) = 0;
+
         ////////////////////////////////////////////////////////////////////////////////////////////
         //! Default destructor
         virtual ~InputSystemCursorRequests() = default;

@@ -211,6 +211,15 @@ namespace AzFramework
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
+    void InputDeviceMouse::SetAllowCursorConstraint(bool constraintAllowed)
+    {
+        if (m_pimpl)
+        {
+            m_pimpl->SetAllowCursorConstraint(constraintAllowed);
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     InputDeviceMouse::Implementation::Implementation(InputDeviceMouse& inputDevice)
         : m_inputDevice(inputDevice)
         , m_rawButtonEventQueuesById()

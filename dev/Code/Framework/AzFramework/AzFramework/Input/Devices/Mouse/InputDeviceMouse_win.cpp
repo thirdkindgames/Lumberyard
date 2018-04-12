@@ -101,6 +101,20 @@ namespace AzFramework
         void RefreshSystemCursorVisibility();
 
         ////////////////////////////////////////////////////////////////////////////////////////////
+        //! Detect fullscreen being toggled and reclip mouse if necessary
+        void UpdateCursorClippingIfWindowSizeChanged();
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // Allow global enabling/disabling of mouse cursor capture.
+        void SetAllowCursorConstraint(bool constraintAllowed) override
+        {
+            m_cursorConstraintAllowed = constraintAllowed;
+            RefreshSystemCursorClippingConstraint();
+            RefreshSystemCursorVisibility();
+        }
+        bool m_cursorConstraintAllowed = true;
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
         //! The current system cursor state
         SystemCursorState m_systemCursorState;
 
@@ -267,6 +281,8 @@ namespace AzFramework
     ////////////////////////////////////////////////////////////////////////////////////////////////
     void InputDeviceMouseWin::TickInputDevice()
     {
+        UpdateCursorClippingIfWindowSizeChanged();
+
         // The input event loop is pumped by the system on windows so all raw input events for this
         // frame have already been dispatched. But they are all queued until ProcessRawEventQueues
         // is called below so that all raw input events are processed at the same time every frame.
@@ -280,6 +296,7 @@ namespace AzFramework
             // happen in a variety of ways due to the cursor being a shared resource), and also for
             // when this application transitions between fullscreen and windowed mode.
             RefreshSystemCursorClippingConstraint();
+            RefreshSystemCursorVisibility();
 
             // Process raw event queues once each frame while this thread's message queue has focus
             ProcessRawEventQueues();
@@ -290,6 +307,8 @@ namespace AzFramework
             // events that are queued, before resetting the state of all associated input channels.
             ProcessRawEventQueues();
             ResetInputChannelStates();
+            RefreshSystemCursorClippingConstraint();
+            RefreshSystemCursorVisibility();
         }
     }
 
@@ -394,14 +413,12 @@ namespace AzFramework
     void InputDeviceMouseWin::RefreshSystemCursorClippingConstraint()
     {
         HWND focusWindow = GetSystemCursorFocusWindow();
-        if (!focusWindow)
-        {
-            return;
-        }
+
 
         const bool shouldBeConstrained = (m_systemCursorState == SystemCursorState::ConstrainedAndHidden) ||
                                          (m_systemCursorState == SystemCursorState::ConstrainedAndVisible);
-        if (!shouldBeConstrained)
+
+        if (!m_cursorConstraintAllowed || !shouldBeConstrained || !focusWindow) ///< Also do this if not the focus window
         {
             // Unconstrain the cursor
             ::ClipCursor(NULL);
@@ -417,10 +434,49 @@ namespace AzFramework
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
+    void InputDeviceMouseWin::UpdateCursorClippingIfWindowSizeChanged()
+    {
+        // Make sure that we're after a constrained mode or we don't care about this
+        const bool shouldBeConstrained =    (m_systemCursorState == SystemCursorState::ConstrainedAndHidden) ||
+                                            (m_systemCursorState == SystemCursorState::ConstrainedAndVisible);
+
+        if (m_cursorConstraintAllowed && shouldBeConstrained && m_hasFocus)
+        {
+            // Get the window to clip against
+            HWND focusWindow = GetSystemCursorFocusWindow();
+            if (focusWindow)
+            {
+                // Get the window client rect
+                RECT clientRect;
+                ::GetClientRect(focusWindow, &clientRect);
+                ::ClientToScreen(focusWindow, (LPPOINT)&clientRect.left);  // Converts the top-left point
+                ::ClientToScreen(focusWindow, (LPPOINT)&clientRect.right); // Converts the bottom-right point
+
+                // Get the current clipped rect (knowing windows this is probably faster than just setting the clip every frame)
+                RECT clippedRect;
+                if (!::GetClipCursor(&clippedRect) ||
+                    clippedRect.left != clientRect.left ||
+                    clippedRect.top != clientRect.top ||
+                    clippedRect.right != clientRect.right ||
+                    clippedRect.bottom != clientRect.bottom)
+                {
+                    // Failed to get the clip rect (just assume it's wrong) or mouse clip rect does not match the window rect - reapply clipping
+                    ::ClipCursor(&clientRect);
+                }
+            }
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     void InputDeviceMouseWin::RefreshSystemCursorVisibility()
     {
-        const bool shouldBeHidden = (m_systemCursorState == SystemCursorState::ConstrainedAndHidden) ||
-                                    (m_systemCursorState == SystemCursorState::UnconstrainedAndHidden);
+        bool shouldBeHidden =   (m_systemCursorState == SystemCursorState::ConstrainedAndHidden) ||
+                                (m_systemCursorState == SystemCursorState::UnconstrainedAndHidden);
+
+        if (!m_cursorConstraintAllowed && !m_hasFocus)
+        {
+            shouldBeHidden = false;
+        }
 
         // The windows system ShowCursor function stores and returns an application specific display
         // counter, and the cursor is displayed only when the display count is greater than or equal

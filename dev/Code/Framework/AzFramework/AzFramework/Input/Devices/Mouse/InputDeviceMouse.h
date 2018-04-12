@@ -142,6 +142,10 @@ namespace AzFramework
         //! \ref AzFramework::InputSystemCursorRequests::GetSystemCursorPositionNormalized
         AZ::Vector2 GetSystemCursorPositionNormalized() const override;
 
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        //! \ref AzFramework::InputSystemCursorRequests::SetAllowCursorConstraint
+        virtual void SetAllowCursorConstraint(bool constraintAllowed) override;
+
     protected:
         ////////////////////////////////////////////////////////////////////////////////////////////
         ///@{
@@ -216,6 +220,10 @@ namespace AzFramework
             //! See also InputSystemCursorRequests::SetSystemCursorState and GetSystemCursorState.
             //! \return The current system cursor position normalized relative to the active window
             virtual AZ::Vector2 GetSystemCursorPositionNormalized() const = 0;
+
+            ////////////////////////////////////////////////////////////////////////////////////////
+            // Allow global enabling/disabling of mouse cursor capture.
+            virtual void SetAllowCursorConstraint(bool) {};
 
             ////////////////////////////////////////////////////////////////////////////////////////
             //! Tick/update the input device to broadcast all input events since the last frame

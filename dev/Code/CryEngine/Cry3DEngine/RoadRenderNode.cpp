@@ -304,7 +304,11 @@ void CRoadRenderNode::Compile() PREFAST_SUPPRESS_WARNING(6262) //function uses >
 
             if (m_pPhysEnt)
             {
-                Vec3 axis = (pVerts[2] + pVerts[3] - pVerts[0] - pVerts[1]).normalized(), n = (pVerts[1] - pVerts[0] ^ pVerts[2] - pVerts[0]) + (pVerts[2] - pVerts[3] ^ pVerts[2] - pVerts[3]);
+                Vec3 axis = (pVerts[2] + pVerts[3] - pVerts[0] - pVerts[1]).normalized();
+                Vec3 nArg1 = (pVerts[1] - pVerts[0] ^ pVerts[2] - pVerts[0]);
+                Vec3 nArg2 = (pVerts[2] - pVerts[3] ^ pVerts[2] - pVerts[0]);
+                Vec3 n = nArg1 + nArg2;
+
                 (n -= axis * (n * axis)).normalize();
                 gp.q = Quat(Matrix33::CreateFromVectors(axis, n ^ axis, n));
                 Vec3 BBox[] = { Vec3(VMAX), Vec3(VMIN) };
